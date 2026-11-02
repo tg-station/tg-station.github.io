@@ -1,0 +1,1103 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="fit.js"></script>
+<script>document.documentElement.classList.add('motion')</script>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
+<title>TG · AI Powered Station</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<style>
+:root{
+  --bg:#0A0B0D; --bg-2:#0D0E11; --card:#15171A; --text:#F2F4F6; --text-2:#C9CDD2; --muted:#8A9099; --dim:#5F656E;
+  --accent:#00A4E4; --glow-in:inset 0 0 18px rgba(0,164,228,.38),inset 0 0 51px rgba(0,164,228,.14); --glow-in-sm:inset 0 0 8px rgba(0,164,228,.38),inset 0 0 20px rgba(0,164,228,.14); --line:rgba(201,205,210,.1); --line-2:rgba(201,205,210,.14);
+  --gutter:56px;
+  /* 제목 크기·행간 (전 페이지 공통) */
+  --fs-title:32px; --lh-title:1.2; --fs-sub:24px; --lh-sub:1.25;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+/* 글꼴: 영문·숫자는 Inter, 한글은 Inter에 없는 글자라 Pretendard로 표시 (전 페이지 공통) */
+body{margin:0;overflow-x:hidden;background:var(--bg);color:var(--text);font-family:Inter,Pretendard,-apple-system,sans-serif;-webkit-font-smoothing:antialiased;word-break:keep-all}
+a{color:var(--text);text-decoration:none;transition:color .2s,border-color .2s,box-shadow .3s}
+a:hover{color:var(--accent)}
+img{display:block}
+h1,h2,h3,p{margin:0}
+button{font:inherit}
+input,textarea{font-family:inherit}
+.eyebrow{font-size:15px;color:var(--accent)}
+@media (min-width:768px){.m-only{display:none !important}}
+
+/* ---------- GNB ---------- */
+.gnb{position:fixed;top:0;left:0;right:0;z-index:20;height:48px;display:flex;align-items:center;justify-content:space-between;padding:0 var(--gutter);background:transparent;border-bottom:1px solid rgba(201,205,210,.2);transition:background-color .4s,backdrop-filter .4s,-webkit-backdrop-filter .4s}
+.gnb.solid{background:rgba(10,11,13,.72);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.gnb-left{display:flex;align-items:center;gap:24px}
+.gnb-logo img{height:16px;width:auto}
+.gnb nav{display:flex;gap:4px;font-size:13px}
+.gnb nav a{display:inline-flex;align-items:center;height:30px;padding:0 12px;border-radius:999px;color:var(--text-2);transition:background-color .3s,color .3s}
+.gnb nav a:hover{color:var(--text);background:rgba(201,205,210,.1)}
+.gnb nav a.on{color:var(--text);font-weight:600;background:rgba(201,205,210,.1)}
+.gnb .login{font-size:12px;color:var(--muted)}
+.menu-btn{width:44px;height:44px;display:none;flex-direction:column;align-items:center;justify-content:center;gap:6px;background:transparent;border:0;cursor:pointer;padding:0}
+.menu-btn span{width:20px;height:1.5px;background:var(--text);transition:transform .3s}
+.menu-open .menu-btn span:first-child{transform:translateY(3.75px) rotate(45deg)}
+.menu-open .menu-btn span:last-child{transform:translateY(-3.75px) rotate(-45deg)}
+.drawer{position:fixed;inset:60px 0 0;z-index:19;background:rgba(10,11,13,.96);backdrop-filter:blur(14px);display:flex;flex-direction:column;padding:24px 20px;gap:4px;opacity:0;pointer-events:none;transition:opacity .3s}
+.drawer a{font-size:22px;font-weight:600;padding:14px 0;border-bottom:1px solid var(--line)}
+.menu-open .drawer{opacity:1;pointer-events:auto}
+
+/* ---------- Buttons ---------- */
+.btn{display:inline-flex;align-items:center;gap:12px;white-space:nowrap;height:36px;padding:0 16px;border-radius:18px;font-size:12px;font-weight:600;transition:color .3s,border-color .3s,box-shadow .3s}
+.btn-solid{background:var(--text);color:var(--bg)}
+.btn-solid:hover{color:var(--bg);box-shadow:0 0 24px rgba(0,164,228,.35)}
+.btn-ghost{border:1px solid rgba(201,205,210,.35);color:var(--text)}
+.btn-ghost:hover{color:var(--text);border-color:var(--accent);box-shadow:var(--glow-in-sm)}
+.link-under{align-self:flex-start;font-size:14px;color:var(--text-2);padding-bottom:4px;border-bottom:1px solid rgba(201,205,210,.4)}
+
+/* ---------- Light-up ---------- */
+.lightable{transition:filter 2.4s ease;filter:brightness(.08)}
+.lit .lightable{filter:brightness(1)}
+[data-reveal]{transition:filter 1.6s ease,opacity 1.6s ease;filter:brightness(.12);opacity:.5}
+[data-reveal].shown{filter:brightness(1);opacity:1}
+
+/* ---------- Hero (desktop) ---------- */
+.hero{position:relative;height:calc(var(--screen-h,900px) * (1 + var(--hero-extra)));overflow:clip;background:var(--bg)}
+/* 배경 고정 · 콘텐츠만 위로: 히어로를 화면보다 길게 두고 배경만 sticky로 고정. --hero-extra = 콘텐츠만 올라가는 구간(화면 높이 배수) */
+.hero{--hero-extra:1}
+.hero-pin{position:sticky;top:0;height:var(--screen-h,900px);overflow:hidden}
+/* 디자인(1440×900)의 구도: 사진 높이 1045, 위로 80 잘림. 화면 높이가 달라도 같은 구도로 꽉 채움 */
+.hero-bg{position:absolute;inset:0;background:url(assets/hero-main.jpg) 0 55% / auto max(calc(var(--screen-h,900px) * 1.1611),850px) no-repeat,url(assets/hero-bg-b.jpg) center / cover no-repeat;background-color:var(--bg)}
+/* 히어로 영상: 한 번 재생 후 마지막 장면(어두운 하늘)에서 멈춤. 영상 로드 전에는 위 사진이 보임 */
+/* 제품을 살짝 오른쪽에 두기 위해 폭을 넓히고 왼쪽에 붙임 (108% → 제품 중심이 화면 54% 지점) */
+.hero-video{position:absolute;top:0;left:0;width:108%;height:100%;object-fit:cover;object-position:50% 55%}
+.hero-shade{position:absolute;inset:0;background:linear-gradient(0deg,rgba(10,11,13,.85),rgba(10,11,13,.45) 25%,rgba(10,11,13,0) 50%),linear-gradient(90deg,rgba(10,11,13,.55),rgba(10,11,13,0) 50%)}
+/* 카피는 sticky 컨테이너 안에 고정, 스크롤에 따라 위로 올라가며 줄별로 사라짐 (값은 하단 스크립트 HERO_OUT) */
+.hero-bg{will-change:transform}
+.hero-copy{position:absolute;left:var(--gutter);right:var(--gutter);bottom:36px;display:flex;flex-direction:column;gap:14px;z-index:2;will-change:transform}
+.hero-copy .line{will-change:opacity}
+.hero-copy .line:first-child{align-self:flex-start}
+.hero h1{align-self:flex-start;display:flex;align-items:center;gap:10px;padding:4px 14px 4px 4px;border-radius:20px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);font-size:14px;line-height:1.3;font-weight:500;color:#fff}
+.hero h1 b{padding:4px 10px;border-radius:14px;background:var(--accent);color:#fff;font-size:13px;font-weight:700}
+.hero-row{display:flex;align-items:flex-end;gap:32px}
+.hero-title{font-size:80px;line-height:.9;font-weight:700;letter-spacing:-.04em;opacity:.82;white-space:nowrap}
+.hero-ctas{margin-left:auto;padding-bottom:4px;display:flex;gap:10px}
+
+/* ---------- Statement / Values ---------- */
+.statement{padding:100px var(--gutter);border-top:1px solid rgba(201,205,210,.06)}
+.grid-label{display:grid;grid-template-columns:200px minmax(0,1fr)}
+.statement h2{max-width:1060px;font-size:var(--fs-title);line-height:var(--lh-title);font-weight:600;letter-spacing:-.025em;text-wrap:balance}
+/* 그라데이션 제목: 단어별 span에 제목 전체 크기의 그라데이션을 위치만 옮겨 입힘 (JS가 --gw/--gh/--gx/--gy 설정) */
+.grad-text{position:relative;--grad-tint:28%;--grad:linear-gradient(180deg,color-mix(in srgb,var(--accent) var(--grad-tint),var(--text)) 22%,var(--text) 82%)}
+.hero-title.grad-text{opacity:1;--grad:linear-gradient(95deg,color-mix(in srgb,var(--accent) 72%,#fff) 0%,color-mix(in srgb,var(--accent) 45%,#fff) 45%,color-mix(in srgb,var(--accent) 15%,#fff) 100%)}
+.grad-text:not(:has(.m-word)),.grad-text .m-word{background-image:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.grad-text .m-word{background-size:var(--gw) var(--gh);background-repeat:no-repeat}
+.values-grid{display:grid;grid-template-columns:200px minmax(0,1fr) minmax(0,1fr);margin-top:80px;padding-top:40px;border-top:1px solid rgba(201,205,210,.2)}
+.values-intro{grid-column:2}
+.values-intro{display:flex;flex-direction:column;gap:20px;max-width:520px;padding-right:48px}
+.values-intro p{font-size:17px;line-height:1.4;color:var(--text-2)}
+.values-intro .nowrap{white-space:nowrap}
+.values-list{display:flex;flex-direction:column;gap:48px;max-width:440px}
+.values-list div{display:flex;flex-direction:column;gap:12px}
+.values-list h3{font-size:var(--fs-sub);line-height:var(--lh-sub);font-weight:500;letter-spacing:-.02em}
+.values-list h3{position:relative}
+.values-list h3 .num{position:absolute;right:100%;top:5px;margin-right:12px;font-size:14px;line-height:1;font-weight:400;letter-spacing:0;color:var(--muted);white-space:nowrap}
+.values-list h3.grad-text .num{background-image:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.values-list p{font-size:14px;line-height:1.4;color:var(--muted)}
+
+/* ---------- Lineup ---------- */
+.lineup{padding:100px 0;background:var(--bg-2);border-top:1px solid rgba(201,205,210,.06)}
+.lineup-head{display:grid;grid-template-columns:200px minmax(0,1fr) auto;align-items:end;padding:0 var(--gutter);margin-bottom:40px}
+.lineup-head .eyebrow{align-self:start}
+.grid-label .eyebrow,.lineup-head .eyebrow{line-height:calc(var(--fs-title) * var(--lh-title))}
+.lineup-head h2{font-size:var(--fs-title);line-height:var(--lh-title);font-weight:600;letter-spacing:-.025em}
+.lineup-head p{margin-top:14px;font-size:15px;color:var(--muted)}
+.lineup-nav{display:flex;gap:8px}
+.lineup-nav button{width:40px;height:40px;border-radius:50%;border:1px solid rgba(201,205,210,.3);background:transparent;color:var(--text);font-size:15px;cursor:pointer;transition:border-color .3s,box-shadow .3s,opacity .3s}
+.lineup-nav button:hover{border-color:var(--accent);box-shadow:var(--glow-in-sm)}
+.lineup-nav button:disabled{opacity:.35;cursor:default;box-shadow:none;border-color:rgba(201,205,210,.3)}
+.track{display:flex;gap:20px;overflow-x:auto;scroll-snap-type:x mandatory;padding:0 var(--gutter) 8px calc(var(--gutter) + 200px);scroll-padding:0 var(--gutter) 0 calc(var(--gutter) + 200px);scrollbar-width:none}
+.track::-webkit-scrollbar{display:none}
+.card{flex:0 0 320px;scroll-snap-align:start;border-radius:20px;border:1px solid var(--line-2);background:var(--card);overflow:hidden;cursor:pointer;transition:border-color .4s,box-shadow .4s}
+.card-media{position:relative;aspect-ratio:1/1;background:radial-gradient(ellipse at 50% 40%,#1C1F23,#121417 72%);overflow:hidden}
+.card-glow{position:absolute;left:15%;right:15%;bottom:14%;height:48px;border-radius:50%;background:radial-gradient(closest-side,rgba(0,164,228,.35),transparent);filter:blur(10px);opacity:0;transition:opacity .5s}
+.card-img{position:absolute;inset:0;background:center / contain no-repeat;filter:brightness(.5) saturate(.7);transition:filter .5s ease}
+.card-badge{position:absolute;top:12px;right:12px;z-index:2;padding:5px 8px;border-radius:8px;border:1px solid rgba(201,205,210,.25);font:inherit;font-size:12px;color:var(--text-2);background:rgba(10,11,13,.6);white-space:nowrap;cursor:pointer;transition:border-color .3s,color .3s,box-shadow .3s}
+.card-badge:hover{border-color:var(--accent);color:var(--text);box-shadow:var(--glow-in-sm)}
+.card-3d{position:absolute;inset:0;opacity:0;transition:opacity .6s ease;cursor:grab}
+.card-3d canvas{display:block}
+.card-3d.v3d-ready{opacity:1}
+.card-3d.v3d-dragging{cursor:grabbing}
+.card-hint{position:absolute;left:0;right:0;bottom:14px;z-index:2;text-align:center;font-size:12px;color:var(--muted);pointer-events:none;transition:opacity .4s}
+.card.is-3d .card-img{opacity:0;transition:opacity .4s}
+.card-body{padding:22px 22px 24px;display:flex;flex-direction:column;gap:16px;border-top:1px solid var(--line)}
+.card-body h3{font-size:20px;line-height:var(--lh-sub);font-weight:700;letter-spacing:-.02em}
+.card-body .line{margin-top:6px;font-size:14px;line-height:1.35;color:var(--muted)}
+.card-spec{display:flex;justify-content:space-between;align-items:flex-end;padding-top:14px;border-top:1px solid var(--line)}
+.card-spec .k{display:block;font-size:11px;color:var(--muted);letter-spacing:.04em;margin-bottom:4px}
+.card-spec .vram{display:flex;align-items:baseline;gap:2px}
+.card-spec .vram b{font-size:15px;font-weight:600}
+.card-spec .vram small{font-size:15px;font-weight:600;color:var(--text)}
+.card-spec .use-wrap{text-align:right}
+.card-spec .use{display:inline-block;font-size:12px;padding:5px 8px;border:1px solid rgba(201,205,210,.22);border-radius:6px;white-space:nowrap}
+.card{position:relative}
+.card::after{content:'';position:absolute;inset:0;z-index:3;border-radius:inherit;pointer-events:none;box-shadow:var(--glow-in);opacity:0;transition:opacity .45s ease}
+.card.on{border-color:var(--accent)}
+.card.on::after{opacity:1}
+.card.on .card-img{filter:brightness(1.06) saturate(1.05)}
+.card.on .card-glow{opacity:1}
+.lineup-hint{margin:16px 20px 0;font-size:13px;color:var(--muted)}
+
+/* ---------- Final CTA ---------- */
+.cta{position:relative;height:240px;overflow:hidden;background:repeating-linear-gradient(135deg,#121417 0 12px,#16181C 12px 24px)}
+.cta-bg{position:absolute;inset:0;background:url(assets/cta-bg.jpg) 70% 50% / cover no-repeat}
+.cta::before{content:"";position:absolute;inset:0;z-index:1;background:linear-gradient(rgba(10,11,13,.35),rgba(10,11,13,.85))}
+.cta-inner{position:relative;z-index:2;height:100%;display:grid;grid-template-columns:200px minmax(0,1fr) auto;align-items:center;padding:0 var(--gutter)}
+.cta-inner>:first-child{grid-column:2}
+.cta h2{font-size:24px;line-height:var(--lh-title);font-weight:600;letter-spacing:-.025em}
+.cta p{margin-top:8px;font-size:13px;color:var(--text-2)}
+.cta-btns{display:flex;gap:8px}
+
+/* ---------- Footer ---------- */
+footer{padding:40px var(--gutter) 32px;background:var(--bg);border-top:1px solid var(--line)}
+.foot-top{display:flex;justify-content:space-between;align-items:flex-start;gap:48px;padding-bottom:28px;border-bottom:1px solid rgba(201,205,210,.08)}
+.foot-tag{font-size:13px;line-height:1.4;color:var(--muted)}
+.foot-logo{display:none;height:22px;width:auto;margin-bottom:10px}
+.sitemap{display:flex;gap:56px}
+.sitemap div{display:flex;flex-direction:column;gap:8px}
+.sitemap span{font-size:12px;font-weight:600;color:var(--text-2)}
+.sitemap a{font-size:12px;color:var(--muted)}
+.foot-bottom{display:flex;justify-content:space-between;gap:24px;padding-top:20px;font-size:11px;color:var(--dim)}
+
+/* ---------- Mobile sections ---------- */
+.m-hero{position:relative;height:720px;overflow:hidden}
+.m-hero-bg{position:absolute;inset:0;background:url(assets/hero-bg-b.jpg) center 64px / auto 720px no-repeat var(--bg)}
+.m-hero-top{position:absolute;left:0;right:0;top:0;height:380px;background:linear-gradient(rgba(10,11,13,.6),rgba(10,11,13,0))}
+.m-hero-bottom{position:absolute;left:0;right:0;top:640px;bottom:0;background:linear-gradient(rgba(10,11,13,0),var(--bg))}
+.m-hero-product{position:absolute;left:50%;top:260px;width:440px;margin-left:-220px}
+.m-hero-copy{position:absolute;left:20px;right:20px;top:110px;display:flex;flex-direction:column;gap:16px}
+.m-hero-copy h1{font-size:36px;line-height:1.2;font-weight:700;letter-spacing:-.02em}
+.m-hero-copy p{font-size:16px;font-weight:500;color:var(--text-2)}
+.m-value{padding:72px 20px;display:flex;flex-direction:column;gap:22px}
+.m-value.alt{background:var(--bg-2)}
+.m-value:first-of-type{border-top:1px solid rgba(201,205,210,.06)}
+.m-kicker{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600;letter-spacing:.06em;color:var(--text-2)}
+.m-kicker::before{content:"";width:20px;height:1px;background:var(--accent);box-shadow:0 0 8px var(--accent)}
+.m-value h2{font-size:26px;line-height:1.2;font-weight:700;letter-spacing:-.02em}
+.m-value p{font-size:15px;line-height:1.55;color:var(--muted)}
+.m-media{margin-top:12px;position:relative;aspect-ratio:4/5;border-radius:10px;border:1px solid rgba(201,205,210,.12);overflow:hidden;background:repeating-linear-gradient(135deg,#121417 0 10px,#16181C 10px 20px)}
+.m-media img{position:absolute;width:260%;left:-95.6%;top:-67%;max-width:none}
+.m-cta{position:relative;min-height:440px;overflow:hidden;background:repeating-linear-gradient(135deg,#121417 0 10px,#16181C 10px 20px);display:flex;flex-direction:column;justify-content:flex-end;gap:18px;padding:40px 20px}
+.m-cta::before{content:"";position:absolute;inset:0;background:linear-gradient(rgba(10,11,13,.2),rgba(10,11,13,.92))}
+.m-cta h2{position:relative;font-size:28px;line-height:1.25;font-weight:700;letter-spacing:-.02em}
+.m-cta a{position:relative;font-size:15px}
+.m-sticky{position:sticky;bottom:0;z-index:6;padding:12px 16px 28px;background:linear-gradient(rgba(10,11,13,0),rgba(10,11,13,.94) 30%)}
+.m-sticky a{display:flex;align-items:center;justify-content:center;gap:10px;height:54px;white-space:nowrap;border-radius:999px;border:1px solid transparent;background:linear-gradient(#F2F4F6,#F2F4F6) padding-box,linear-gradient(90deg,transparent 0%,#00A4E4 25%,transparent 50%,#00A4E4 75%,transparent 100%) border-box;background-size:100% 100%,200% 100%;color:var(--bg);font-size:16px;font-weight:600;box-shadow:0 0 20px rgba(0,164,228,.18)}
+.m-sticky a:active{animation:tg-flow 1.2s linear infinite;color:var(--bg)}
+@keyframes tg-flow{from{background-position:0 0,0 0}to{background-position:0 0,-200% 0}}
+
+/* ---------- Mobile ---------- */
+@media (max-width:767px){
+  .d-only{display:none !important}
+  .gnb{height:60px;padding:0 20px;background:rgba(10,11,13,.78)}
+  .gnb-logo img{height:20px}
+  .gnb nav,.gnb .login{display:none}
+  .menu-btn{display:flex}
+  .lineup{padding:72px 0}
+  .lineup-head{display:flex;justify-content:space-between;align-items:flex-end;padding:0 20px;margin-bottom:28px}
+  .lineup-head h2{font-size:26px;font-weight:700;letter-spacing:-.02em}
+  .lineup-head .all{font-size:14px;color:var(--text-2)}
+  .track{gap:12px;padding:0 20px;scroll-padding:0 20px}
+  .card{flex-basis:286px;cursor:default}
+  .card-glow{height:44px;filter:blur(8px)}
+  .card-badge{display:none}
+  .card-body{padding:20px;gap:14px}
+  .card-body h3{font-size:22px}
+  .card-body .line{margin-top:6px;font-size:14px;line-height:1.4}
+  .card-spec{padding-top:14px}
+  .card-spec .k{margin-bottom:4px}
+  .card-spec .vram b{font-size:28px}
+  .card-spec .vram small{font-size:13px}
+  .card-spec .use{font-size:13px;padding:5px 9px}
+  .card-spec .use-wrap .k{display:none}
+  footer{padding:56px 20px 32px;display:flex;flex-direction:column;gap:22px}
+  .foot-top{flex-direction:column;gap:22px;padding-bottom:0;border:0}
+  .foot-logo{display:block}
+  .foot-tag{font-size:14px;line-height:1.45}
+  .sitemap{display:grid;grid-template-columns:1fr 1fr;gap:28px 16px}
+  .sitemap div{gap:10px}
+  .sitemap span{font-size:14px;color:var(--text)}
+  .sitemap a{font-size:13px}
+  .foot-bottom{flex-direction:column;gap:4px;padding-top:0;font-size:12px;line-height:1.45}
+}
+/* ---------- Motion (초기 숨김 상태, 설정값은 motion.js의 MOTION 상수) ---------- */
+.m-word{display:inline-block}
+.motion [data-split]{visibility:hidden}
+.motion [data-up],.motion [data-up-group]>*,.motion [data-light],.motion .hero h1,.motion .hero-ctas{opacity:0}
+.track{padding-top:8px;margin-top:-8px}
+.card.ready{transition:border-color .4s,box-shadow .4s,transform .6s cubic-bezier(.22,1,.36,1)}
+.card.on{transform:translateY(-4px)}
+.card-body{position:relative}
+.card-body::before{content:"";position:absolute;left:0;right:0;top:-1px;height:1px;background:var(--accent);box-shadow:0 0 10px rgba(0,164,228,.6);transform:scaleX(0);opacity:0;transition:transform .7s cubic-bezier(.22,1,.36,1),opacity .4s}
+.card.on .card-body::before{transform:scaleX(1);opacity:1}
+.card-spec .vram b{font-variant-numeric:tabular-nums}
+[data-count]{font-variant-numeric:tabular-nums}
+
+/* ---------- Sub pages (#guide · #compare · #service · #business, 화면 전환은 하단 스크립트) ---------- */
+[data-view][hidden]{display:none}
+/* GNB가 고정이라 그 높이만큼 내려서 시작. 서브 페이지 제목 행간은 메인보다 살짝 넓게 */
+.view{margin-top:48px;--lh-title:1.25;--lh-sub:1.3}
+.page-title{font-size:var(--fs-title);line-height:var(--lh-title);font-weight:700;letter-spacing:-.02em}
+.stripe{background:repeating-linear-gradient(135deg,#121417 0 12px,#16181C 12px 24px)}
+.media-bg{background:radial-gradient(ellipse at 50% 40%,#1C1F23,#121417 72%)}
+.pill-flow{display:inline-flex;align-items:center;justify-content:center;white-space:nowrap;border-radius:999px;border:1px solid transparent;background:linear-gradient(#F2F4F6,#F2F4F6) padding-box,linear-gradient(#F2F4F6,#F2F4F6) border-box;color:var(--bg);font-weight:600;cursor:pointer}
+.pill-flow:hover{color:var(--bg);background:linear-gradient(#F2F4F6,#F2F4F6) padding-box,linear-gradient(90deg,transparent 0%,#00A4E4 25%,transparent 50%,#00A4E4 75%,transparent 100%) border-box;background-size:100% 100%,200% 100%;animation:tg-flow 1.6s linear infinite;box-shadow:0 0 24px rgba(0,164,228,.3)}
+.pill-ghost{display:inline-flex;align-items:center;justify-content:center;white-space:nowrap;border-radius:999px;border:1px solid rgba(201,205,210,.35);color:var(--text);transition:border-color .3s,box-shadow .3s}
+.pill-ghost:hover{color:var(--text);border-color:var(--accent);box-shadow:var(--glow-in-sm)}
+.chip{border-radius:999px;border:1px solid rgba(201,205,210,.22);background:transparent;color:var(--text);font-weight:600;cursor:pointer;transition:border-color .3s,background .3s,box-shadow .3s}
+.chip:hover{border-color:var(--accent);box-shadow:var(--glow-in-sm)}
+.chip.on{border-color:var(--accent);background:rgba(0,164,228,.08);box-shadow:var(--glow-in-sm)}
+.steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:24px}
+.steps > div{display:flex;flex-direction:column;gap:14px;padding-top:24px;border-top:1px solid rgba(201,205,210,.5)}
+.steps h3{min-height:30px;font-size:var(--fs-sub);line-height:var(--lh-sub);font-weight:700;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.steps h3 span{font-size:30px;line-height:1;font-weight:300;color:var(--text-2)}
+.steps p{max-width:220px;font-size:15px;line-height:1.5;color:var(--muted)}
+
+/* Guide */
+.guide{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:72px;padding:88px 120px 140px;min-height:900px}
+.guide-main{display:flex;flex-direction:column;gap:32px}
+.guide-head{display:flex;flex-direction:column;gap:20px}
+.q{display:flex;flex-direction:column;gap:18px;padding-top:32px;border-top:1px solid rgba(201,205,210,.14)}
+.q-title{display:flex;align-items:baseline;gap:16px}
+.q-title span{font-size:14px;color:var(--accent)}
+.q-title h2{font-size:var(--fs-sub);line-height:var(--lh-sub);font-weight:700;letter-spacing:-.02em}
+.opts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.opt{display:flex;flex-direction:column;gap:6px;padding:16px 18px;border-radius:10px;border:1px solid rgba(201,205,210,.16);background:var(--card);color:var(--text);text-align:left;cursor:pointer;transition:border-color .3s,box-shadow .3s,background .3s}
+.opt:hover{border-color:var(--accent);box-shadow:var(--glow-in)}
+.opt.on{border-color:var(--accent);background:rgba(0,164,228,.06);box-shadow:var(--glow-in)}
+.opt b{font-size:16px;font-weight:600}
+.opt small{font-size:13px;line-height:1.4;color:var(--muted)}
+.rec{position:sticky;top:88px;display:flex;flex-direction:column;border-radius:12px;border:1px solid rgba(0,164,228,.4);background:var(--card);overflow:hidden;box-shadow:0 0 0 1px rgba(0,164,228,.1),0 0 48px rgba(0,164,228,.14)}
+.rec-media{position:relative;aspect-ratio:1/1;overflow:hidden}
+.rec-media img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;transition:opacity .35s ease,transform .8s cubic-bezier(.22,1,.36,1)}
+.rec-media img.swap{opacity:0;transform:scale(1.05)}
+.rec-badge{position:absolute;top:14px;left:14px;padding:5px 9px;border-radius:6px;background:var(--accent);color:var(--text);font-size:12px;font-weight:600}
+.rec-body{padding:22px 22px 24px;display:flex;flex-direction:column;gap:16px;border-top:1px solid rgba(201,205,210,.1)}
+.rec-info{display:flex;flex-direction:column;gap:6px}
+.rec-for{font-size:13px;color:var(--muted)}
+.rec-info h3{font-size:var(--fs-sub);font-weight:700;letter-spacing:-.02em}
+.rec-info p{font-size:14px;line-height:1.45;color:var(--text-2)}
+.rec-spec{display:flex;justify-content:space-between;align-items:flex-end;padding-top:14px;border-top:1px solid rgba(201,205,210,.1)}
+.rec-spec .k{display:block;font-size:11px;color:var(--muted);margin-bottom:4px}
+.rec-spec .v{display:flex;align-items:baseline;gap:2px}
+.rec-spec .v b{font-size:15px;font-weight:600}
+.rec-spec .v small{font-size:15px;font-weight:600;color:var(--text)}
+.rec-alt{font-size:13px;color:var(--muted)}
+.rec-btns{display:flex;gap:8px}
+.rec-btns .pill-flow{flex:1;height:36px;font-size:12px}
+.rec-btns .pill-ghost{height:36px;padding:0 16px;font-size:12px}
+
+/* Compare */
+.compare{padding:88px 120px 140px}
+.cmp-head{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:28px}
+.cmp-head > div:first-child{display:flex;flex-direction:column;gap:18px}
+.picker{display:flex;align-items:center;gap:10px}
+.picker > span{font-size:14px;color:var(--muted);margin-right:6px}
+.picker .chip{height:36px;padding:0 14px;font-size:13px}
+.table{border-top:1px solid rgba(201,205,210,.2)}
+.row{display:flex;align-items:center;border-bottom:1px solid rgba(201,205,210,.1);padding:12px 0}
+.row.models{align-items:stretch;padding:20px 0;border-bottom-color:rgba(201,205,210,.14)}
+.row .label{flex:0 0 200px;display:flex;flex-direction:column;gap:3px}
+.row .label b{font-size:14px;font-weight:500;color:var(--text-2)}
+.row .cell{flex:1;min-width:0;padding-right:20px;font-size:14px;line-height:1.45;color:var(--text-2)}
+.row.primary{padding:16px 0}
+.row.primary .label b{font-weight:700;color:var(--text)}
+.row.primary .hint{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted)}
+.row.primary .hint::before{content:"";width:16px;height:1px;background:var(--accent);box-shadow:0 0 6px var(--accent)}
+.row.primary .cell{display:flex;align-items:baseline;gap:2px}
+.row.primary .cell b{font-size:16px;font-weight:700;color:var(--text)}
+.row.primary .cell small{font-size:16px;font-weight:700;color:var(--text)}
+.mcol{display:flex;flex-direction:column;gap:10px}
+.mcol .thumb{height:100px;border-radius:10px;overflow:hidden}
+.mcol .thumb img{width:100%;height:100%;object-fit:contain}
+.mcol b{font-size:18px;font-weight:700}
+.mcol span{font-size:13px;color:var(--muted)}
+.group{padding:20px 0 6px;font-size:12px;font-weight:600;letter-spacing:.08em;color:var(--muted)}
+
+/* Service */
+.intro{display:grid;grid-template-columns:minmax(0,1fr) 560px;gap:96px;align-items:center;padding:88px 120px}
+.intro > div:first-child{display:flex;flex-direction:column;gap:24px}
+.intro p{max-width:460px;font-size:18px;line-height:1.5;color:var(--muted)}
+.intro-media{aspect-ratio:4/5;border-radius:10px;border:1px solid rgba(201,205,210,.12);overflow:hidden;background:var(--card)}
+.intro-media img{width:100%;height:100%;object-fit:cover}
+.programs{padding:0 120px 100px}
+.program{display:grid;grid-template-columns:120px 380px minmax(0,1fr);gap:48px;padding:48px 0;border-top:1px solid rgba(201,205,210,.14)}
+.program > span{font-size:14px;color:var(--accent)}
+.program h2{font-size:var(--fs-sub);line-height:var(--lh-sub);font-weight:700;letter-spacing:-.025em}
+.program > div{display:flex;flex-direction:column;gap:20px}
+.program p{font-size:17px;line-height:1.5;color:var(--text-2)}
+.tags{display:flex;flex-wrap:wrap;gap:8px}
+.tags span{padding:6px 12px;border-radius:6px;border:1px solid rgba(201,205,210,.22);font-size:14px;color:var(--text-2)}
+.flow{padding:88px 120px;background:var(--bg-2);border-top:1px solid rgba(201,205,210,.06)}
+.flow > h2{margin-bottom:40px;font-size:var(--fs-title);line-height:var(--lh-title);font-weight:700;letter-spacing:-.02em}
+.support{display:flex;justify-content:space-between;align-items:center;margin-top:56px;padding:32px 36px;border-radius:12px;border:1px solid rgba(201,205,210,.18)}
+.support div{display:flex;flex-direction:column;gap:6px}
+.support b{font-size:20px;font-weight:700}
+.support div span{font-size:15px;color:var(--muted)}
+.support a{display:inline-flex;align-items:center;white-space:nowrap;height:36px;padding:0 16px;border-radius:999px;border:1px solid var(--text-2);font-size:12px;font-weight:600;transition:color .3s,border-color .3s,box-shadow .3s}
+.support a:hover{color:var(--text);border-color:var(--accent);box-shadow:var(--glow-in-sm)}
+
+/* Business */
+.biz-intro{position:relative;height:560px;overflow:hidden}
+.biz-intro::before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(10,11,13,.95),rgba(10,11,13,.4))}
+.biz-intro > div{position:relative;height:100%;display:flex;flex-direction:column;justify-content:center;gap:24px;padding:0 120px}
+.biz-intro p{max-width:480px;font-size:18px;line-height:1.5;color:var(--text-2)}
+.benefits{padding:88px 120px 0}
+.form-sec{display:grid;grid-template-columns:400px minmax(0,1fr);gap:96px;padding:100px 120px}
+.form-intro{display:flex;flex-direction:column;gap:20px}
+.form-intro h2{font-size:var(--fs-title);line-height:var(--lh-title);font-weight:700;letter-spacing:-.02em}
+.form-intro p{font-size:17px;line-height:1.5;color:var(--muted)}
+.form-intro span{margin-top:12px;font-size:15px;color:var(--text-2)}
+.form-sec form{display:flex;flex-direction:column;gap:28px}
+.fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+.form-sec label{display:flex;flex-direction:column;gap:10px;font-size:14px;color:var(--text-2)}
+.form-sec input,.form-sec textarea{border-radius:8px;border:1px solid rgba(201,205,210,.22);background:var(--card);color:var(--text);font-size:14px;outline:none;transition:border-color .2s,box-shadow .2s}
+.form-sec input{height:44px;padding:0 16px}
+.form-sec textarea{padding:16px 18px;line-height:1.45;resize:vertical}
+.form-sec input:focus,.form-sec textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,164,228,.15)}
+.form-sec input::placeholder,.form-sec textarea::placeholder{color:var(--dim)}
+.form-sec input:user-invalid{border-color:#E4572E}
+.interest{display:flex;flex-direction:column;gap:12px}
+.interest > span{font-size:14px;color:var(--text-2)}
+.interest div{display:flex;gap:10px}
+.interest .chip{height:36px;padding:0 14px;font-size:13px}
+.submit{align-self:flex-start;height:36px;padding:0 16px;font-size:12px}
+.sent{display:flex;flex-direction:column;gap:20px;justify-content:center;padding:56px;border-radius:12px;border:1px solid rgba(0,164,228,.4);background:var(--card);box-shadow:0 0 40px rgba(0,164,228,.12)}
+.sent[hidden],.form-sec form[hidden]{display:none}
+.sent i{width:32px;height:1px;background:var(--accent);box-shadow:0 0 8px var(--accent)}
+.sent h3{font-size:var(--fs-sub);line-height:var(--lh-sub);font-weight:700}
+.sent p{font-size:17px;line-height:1.5;color:var(--muted)}
+.sent button{align-self:flex-start;background:transparent;border:0;padding:0 0 4px;border-bottom:1px solid rgba(201,205,210,.4);color:var(--text-2);font-size:15px;cursor:pointer}
+.sent button:hover{color:var(--accent)}
+
+@media (prefers-reduced-motion:reduce){
+  *{transition:none !important;animation:none !important}
+  .card.on{transform:none}
+  .hero-video{display:none}
+  .hero{--hero-extra:0}
+  html{scroll-behavior:auto}
+}
+</style>
+</head>
+<body>
+
+<header class="gnb">
+  <div class="gnb-left">
+    <a class="gnb-logo" href="#top"><img src="assets/tg-logo.png" alt="TG"></a>
+    <nav>
+      <a href="#lineup">Products</a><a href="#guide">Guide</a><a href="#compare">Compare</a><a href="#service">Service</a><a href="#business">Business</a>
+    </nav>
+  </div>
+  <a class="login" href="#">Log in</a>
+  <button class="menu-btn" aria-label="메뉴" aria-expanded="false"><span></span><span></span></button>
+</header>
+<div class="drawer" aria-hidden="true">
+  <a href="#lineup">Products</a><a href="#guide">Guide</a><a href="#compare">Compare</a><a href="#service">Service</a><a href="#business">Business</a><a href="#">Log in</a>
+</div>
+
+<main id="top" data-view="home">
+
+  <!-- ① HERO · desktop -->
+  <section class="hero d-only" aria-label="히어로">
+    <div class="hero-pin">
+      <div class="hero-bg lightable"><video class="hero-video" src="assets/hero-video.mp4" autoplay muted playsinline preload="auto" aria-hidden="true"></video></div>
+      <div class="hero-shade"></div>
+      <div class="hero-copy">
+        <span class="line"><h1><b>NEW</b>가장 무거운 작업을 가장 가볍게</h1></span>
+        <span class="line hero-row">
+          <p class="hero-title grad-text" aria-label="AI Powered Station" data-split="manual">AI Powered Station</p>
+          <span class="hero-ctas">
+            <a class="btn btn-solid" href="#guide">모델 찾기<span>→</span></a>
+            <a class="btn btn-ghost" href="#compare">사양 비교<span>→</span></a>
+          </span>
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ① HERO · mobile -->
+  <section class="m-hero m-only" aria-label="히어로">
+    <div class="m-hero-bg lightable"></div>
+    <div class="m-hero-top"></div>
+    <div class="m-hero-bottom"></div>
+    <img class="m-hero-product lightable" src="assets/tg-a.png" alt="TG S1" onerror="this.remove()">
+    <div class="m-hero-copy">
+      <h1 data-split>가장 무거운<br>작업을<br>가장 가볍게</h1>
+      <p data-up>AI Powered Station, TG</p>
+    </div>
+  </section>
+
+  <!-- ② STATEMENT + VALUES · desktop -->
+  <section class="statement d-only">
+    <div class="grid-label">
+      <span class="eyebrow">ABOUT TG</span>
+      <h2 class="grad-text" data-split>더 강하게, 더 정교하게, 더 오래</h2>
+    </div>
+    <div class="values-grid">
+      <div class="values-intro" data-up-group>
+        <p>대용량 GPU 메모리, 뛰어난 냉각 성능,<br>그리고 지속적인 업그레이드와 기술 지원까지.<br><span class="nowrap">한 번 사서 오래 쓰는 최고의 작업 환경을 제공합니다.</span></p>
+        <a class="link-under" href="#">브랜드 더 보기 →</a>
+      </div>
+      <div class="values-list" data-up-group>
+        <div><h3 class="grad-text"><span class="num">(01)</span>압도적 성능</h3><p>대용량 GPU 메모리와 안정적인 냉각 설계로 긴 학습과 대량 생성에도<br>속도가 흔들리지 않습니다.</p></div>
+        <div><h3 class="grad-text"><span class="num">(02)</span>정제된 디자인</h3><p>불필요한 장식 없이 금속의 질감과 한 줄의 라이트 라인만 남겼습니다.</p></div>
+        <div><h3 class="grad-text"><span class="num">(03)</span>언제나 믿고 맡길 수 있는 든든함</h3><p>규모가 커지면 필요한 부품만 간편하게 교체하세요. <br>설치와 A/S 전 과정을 전문 엔지니어가 전담합니다.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ② VALUES · mobile -->
+  <div class="m-only">
+    <section class="m-value">
+      <div class="m-kicker">01 · 압도적 성능</div>
+      <h2 data-split>학습부터 생성까지,<br>무거운 AI 작업을 멈춤 없이</h2>
+      <p>대용량 GPU 메모리와 안정적인 냉각 설계로 긴 학습에도 속도가 흔들리지 않습니다.</p>
+      <div class="m-media" data-reveal></div>
+    </section>
+    <section class="m-value alt">
+      <div class="m-kicker">02 · 정제된 디자인</div>
+      <h2 data-split>알루미늄 한 면,<br>빛 한 줄까지</h2>
+      <p>금속의 결과 한 줄의 라이트 라인만 남겼습니다.</p>
+      <div class="m-media" data-reveal style="background:#000"><img src="assets/tg-b-mood.jpg" alt="" onerror="this.remove()"></div>
+    </section>
+    <section class="m-value">
+      <div class="m-kicker">03 · 지속적인 신뢰</div>
+      <h2 data-split>업그레이드와 전문 기술<br>지원으로 오래도록</h2>
+      <p>설치부터 A/S까지 전문 엔지니어가 함께합니다.</p>
+      <div class="m-media" data-reveal></div>
+    </section>
+  </div>
+
+  <!-- ③ LINEUP -->
+  <section class="lineup" id="lineup" aria-label="라인업">
+    <div class="lineup-head d-only">
+      <span class="eyebrow">LINEUP</span>
+      <div>
+        <h2 data-split>라인업 한눈에 보기</h2>
+        <p data-up>필요한 작업에 알맞은 모델로 고르세요.</p>
+      </div>
+      <div class="lineup-nav">
+        <button type="button" data-dir="-1" aria-label="이전">←</button>
+        <button type="button" data-dir="1" aria-label="다음">→</button>
+      </div>
+    </div>
+    <div class="lineup-head m-only">
+      <h2 data-split>라인업</h2>
+      <a class="all" href="#">전체 보기 →</a>
+    </div>
+    <div class="track" id="track" data-up-group></div>
+    <p class="lineup-hint m-only">카드를 탭하면 라이트가 켜집니다.</p>
+  </section>
+
+  <!-- ⑦ FINAL CTA · desktop -->
+  <section class="cta d-only">
+    <div class="cta-bg" data-light aria-hidden="true"></div>
+    <div class="cta-inner">
+      <div>
+        <h2 data-split>이제 나에게 맞는<br>AI 도구를 찾을 차례</h2>
+        <p data-up>세 가지 질문이면 충분합니다.</p>
+      </div>
+      <div class="cta-btns" data-up>
+        <a class="btn btn-solid" href="#guide">모델 찾기<span>→</span></a>
+        <a class="btn btn-ghost" href="#business">기업 구매 문의<span>→</span></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ⑦ FINAL CTA · mobile -->
+  <section class="m-cta m-only">
+    <h2 data-split>이제, 내 작업에 맞는<br>TG를 찾을 차례</h2>
+    <a class="link-under" href="#business">기업 구매 문의</a>
+  </section>
+</main>
+
+<!-- ⑨ GUIDE -->
+<main class="view guide" data-view="guide" hidden>
+  <div class="guide-main">
+    <div class="guide-head">
+      <span class="eyebrow" data-up>GUIDE</span>
+      <h1 class="page-title" data-split>세 가지 답이면<br>충분합니다</h1>
+    </div>
+    <div id="questions" style="display:contents"></div>
+  </div>
+
+  <aside>
+    <div class="rec" aria-live="polite" data-up>
+      <div class="rec-media media-bg">
+        <img id="recImg" src="" alt="">
+        <span class="rec-badge">추천 결과</span>
+      </div>
+      <div class="rec-body">
+        <div class="rec-info">
+          <span class="rec-for" id="recFor"></span>
+          <h3 id="recName"></h3>
+          <p id="recReason"></p>
+        </div>
+        <div class="rec-spec">
+          <div><span class="k">GPU 메모리</span><span class="v"><b id="recVram"></b><small>GB</small></span></div>
+          <span class="rec-alt" id="recAlt"></span>
+        </div>
+        <div class="rec-btns">
+          <a class="pill-flow" href="#lineup">제품 상세 보기 →</a>
+          <a class="pill-ghost" href="#compare">사양 비교</a>
+        </div>
+      </div>
+    </div>
+  </aside>
+</main>
+
+<!-- ⑩ COMPARE -->
+<main class="view compare" data-view="compare" hidden>
+  <div class="cmp-head">
+    <div>
+      <span class="eyebrow" data-up>COMPARE</span>
+      <h1 class="page-title" data-split>모델을 비교해보세요</h1>
+    </div>
+    <div class="picker" id="picker" data-up><span>비교할 모델</span></div>
+  </div>
+  <div class="table" id="table" data-up-group data-stagger="0.04"></div>
+</main>
+
+<!-- ⑪ SERVICE -->
+<main class="view" data-view="service" hidden>
+  <section class="intro">
+    <div>
+      <span class="eyebrow" data-up>SERVICE</span>
+      <h1 class="page-title" data-split>구매 이후가<br>더 든든하도록</h1>
+      <p data-up>작업 규모가 커지면 부품만 바꾸면 됩니다.<br>설치부터 A/S까지 전문 엔지니어가 함께합니다.</p>
+    </div>
+    <div class="intro-media" data-light><img src="assets/service-intro.jpg" alt="엔지니어가 TG 워크스테이션의 사이드 커버를 분리하는 모습"></div>
+  </section>
+
+  <section class="programs">
+    <div class="program" data-up>
+      <span>01</span>
+      <h2>업그레이드 프로그램</h2>
+      <div>
+        <p>작업 규모가 커지면 GPU·메모리·저장장치를 교체해 같은 시스템을 더 오래 씁니다.</p>
+        <div class="tags"><span>GPU 교체</span><span>메모리 증설</span><span>저장장치 확장</span></div>
+      </div>
+    </div>
+    <div class="program" data-up>
+      <span>02</span>
+      <h2>전문 기술 지원</h2>
+      <div>
+        <p>원격 진단부터 방문 A/S까지, AI 워크로드를 이해하는 엔지니어가 응대합니다.</p>
+        <div class="tags"><span>원격 진단</span><span>방문 A/S</span><span>설치 지원</span></div>
+      </div>
+    </div>
+    <div class="program" data-up>
+      <span>03</span>
+      <h2>투명한 사양 공개</h2>
+      <div>
+        <p>모든 부품의 제조사와 모델명을 공개합니다. 숨겨진 사양은 없습니다.</p>
+        <div class="tags"><span>부품 제조사 공개</span><span>모델명 공개</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="flow">
+    <h2 data-split>A/S는 이렇게 진행됩니다</h2>
+    <div class="steps" data-up-group>
+      <div><h3>접수<span aria-hidden="true">→</span></h3><p>전화 · 온라인으로 증상을 남깁니다.</p></div>
+      <div><h3>원격 진단<span aria-hidden="true">→</span></h3><p>엔지니어가 원격으로 원인을 확인합니다.</p></div>
+      <div><h3>방문 · 입고<span aria-hidden="true">→</span></h3><p>필요하면 방문하거나 입고해 수리합니다.</p></div>
+      <div><h3>완료</h3><p>작업 환경까지 확인한 뒤 마무리합니다.</p></div>
+    </div>
+    <div class="support" data-up>
+      <div><b>기술 지원 접수</b><span>[대표번호] · [운영 시간] · [이메일]</span></div>
+      <a href="#">온라인 접수하기 →</a>
+    </div>
+  </section>
+</main>
+
+<!-- ⑫ BUSINESS -->
+<main class="view" data-view="business" hidden>
+  <section class="biz-intro stripe">
+    <div>
+      <span class="eyebrow" data-up>BUSINESS</span>
+      <h1 class="page-title" data-split>팀 전체의 작업을<br>한 번에 준비하세요</h1>
+      <p data-up>연구실, 스튜디오, 기업 단위 도입을 위한<br>맞춤 구성과 견적을 제공합니다.</p>
+    </div>
+  </section>
+
+  <section class="benefits steps" data-up-group>
+    <div><h3>대량 견적</h3><p>도입 수량에 맞춘 별도 견적을 제공합니다.</p></div>
+    <div><h3>맞춤 구성</h3><p>작업과 예산에 맞춰 부품 구성을 조정합니다.</p></div>
+    <div><h3>전담 매니저</h3><p>도입부터 A/S까지 한 명이 책임집니다.</p></div>
+    <div><h3>설치 · 세팅</h3><p>현장 설치와 작업 환경 세팅을 지원합니다.</p></div>
+  </section>
+
+  <section class="form-sec" id="quote">
+    <div class="form-intro">
+      <h2 data-split>견적 문의</h2>
+      <p data-up>남겨주신 내용을 확인한 뒤<br>담당 매니저가 연락드립니다.</p>
+      <span data-up>[기업 구매 대표번호] · [이메일]</span>
+    </div>
+
+    <form id="quoteForm" data-up>
+      <div class="fields">
+        <label>회사 · 기관명<input name="company" placeholder="회사명을 입력하세요" required></label>
+        <label>담당자<input name="name" placeholder="이름" required></label>
+        <label>연락처<input name="phone" type="tel" placeholder="010-0000-0000" required></label>
+        <label>이메일<input name="email" type="email" placeholder="name@company.com" required></label>
+        <label>예상 수량<input name="qty" placeholder="예: 10대"></label>
+        <label>도입 희망 시기<input name="when" placeholder="예: 다음 분기"></label>
+      </div>
+      <div class="interest">
+        <span>관심 모델 (복수 선택)</span>
+        <div id="interest"></div>
+      </div>
+      <label>문의 내용<textarea name="msg" rows="5" placeholder="주요 작업, 필요한 구성, 도입 일정 등을 적어주세요"></textarea></label>
+      <button type="submit" class="pill-flow submit">견적 문의 보내기 →</button>
+    </form>
+
+    <div class="sent" id="sent" hidden>
+      <i></i>
+      <h3>문의가 접수되었습니다</h3>
+      <p>담당 매니저가 확인 후 연락드립니다.</p>
+      <button type="button" id="reset">다시 작성하기</button>
+    </div>
+  </section>
+</main>
+
+<!-- ⑧ FOOTER -->
+<footer>
+  <div class="foot-top">
+    <div>
+      <img class="foot-logo" src="assets/tg-logo.png" alt="TG">
+      <p class="foot-tag">가장 무거운 작업을 가장 가볍게,<br>AI Powered Station</p>
+    </div>
+    <div class="sitemap" id="sitemap"></div>
+  </div>
+  <div class="foot-bottom">
+    <span>고객 지원 [대표번호] · [운영 시간] · [이메일]</span>
+    <span>[사업자 정보] · © TG</span>
+  </div>
+</footer>
+
+<div class="m-sticky m-only">
+  <a href="#guide">내 작업에 맞는 모델 찾기 →</a>
+</div>
+
+<script>
+// TG 모델 사양 (Guide · Compare · Business 공통)
+window.TG_MODELS = [
+  { id: 'A', name: 'TG S1', use: '이미지·영상 생성', img: 'assets/tg-a.png',
+    vram: '32', gpu: 'NVIDIA GeForce RTX 5090 ×1', cpu: 'AMD Ryzen 9 9950X · 16코어', ram: '128GB DDR5', ssd: '4TB NVMe Gen5', slot: 'PCIe 5.0 x16 ×1 여유', port: 'USB4 ×2 · 10GbE ×1', cool: '360mm 수랭', psu: '1,600W 80+ Platinum', size: '230 × 480 × 500mm · 18kg', warranty: '3년' },
+  { id: 'B', name: 'TG R1', use: '3D 렌더링', img: 'assets/tg-b2.png',
+    vram: '64', gpu: 'NVIDIA GeForce RTX 5090 ×2', cpu: 'AMD Threadripper 9970X · 32코어', ram: '256GB DDR5', ssd: '8TB NVMe Gen5', slot: 'PCIe 5.0 x16 ×2 여유', port: 'USB4 ×2 · 10GbE ×2', cool: '하이브리드 수랭', psu: '2,000W 80+ Titanium', size: '250 × 520 × 560mm · 26kg', warranty: '3년' },
+  { id: 'C', name: 'TG X1', use: 'LLM 추론', img: 'assets/tg-c2.png',
+    vram: '96', gpu: 'NVIDIA RTX PRO 6000 Blackwell ×1', cpu: 'AMD Threadripper 9960X · 24코어', ram: '256GB DDR5 ECC', ssd: '4TB NVMe Gen5', slot: 'PCIe 5.0 x16 ×3 여유', port: 'USB4 ×2 · 25GbE ×2', cool: '정숙형 공랭', psu: '1,600W 80+ Titanium', size: '220 × 470 × 520mm · 20kg', warranty: '3년' },
+  { id: 'D', name: 'TG X2', use: 'LLM 학습', img: 'assets/tg-d2.png',
+    vram: '384', gpu: 'NVIDIA RTX PRO 6000 Blackwell ×4', cpu: 'AMD Threadripper PRO 9995WX · 96코어', ram: '1TB DDR5 ECC', ssd: '16TB NVMe Gen5 RAID', slot: '확장 불가 (풀 구성)', port: 'USB4 ×2 · 100GbE ×2', cool: '고풍량 공랭 · 풀 메시', psu: '1,600W ×2 이중화', size: '280 × 560 × 620mm · 38kg', warranty: '5년' }
+];
+
+// Guide: 세 가지 답으로 모델 추천
+(() => {
+  const models = window.TG_MODELS;
+  const by = id => models.find(m => m.id === id);
+  const answers = { task: 'llm', scale: 'solo', prio: 'perf' };
+  const QUESTIONS = [
+    { key: 'task', no: '01', title: '어떤 작업을 하시나요?', opts: [
+      { v: 'llm', label: 'LLM', desc: '언어 모델 학습 · 파인튜닝 · 추론' },
+      { v: 'gen', label: '이미지·영상 생성', desc: '생성형 이미지 · 영상 · 업스케일' },
+      { v: '3d', label: '3D 렌더링', desc: '모델링 · 시뮬레이션 · 최종 렌더' }] },
+    { key: 'scale', no: '02', title: '작업 규모는 어느 정도인가요?', opts: [
+      { v: 'solo', label: '개인 작업', desc: '한 사람이 주로 사용' },
+      { v: 'team', label: '팀 공용', desc: '여러 명이 번갈아 사용' },
+      { v: 'large', label: '대규모 학습', desc: '큰 모델 · 긴 학습 시간' }] },
+    { key: 'prio', no: '03', title: '가장 중요한 건 무엇인가요?', opts: [
+      { v: 'perf', label: '최대 성능', desc: '속도가 가장 중요' },
+      { v: 'quiet', label: '조용한 작동', desc: '사무 공간에 두고 사용' },
+      { v: 'expand', label: '확장성', desc: '나중에 부품을 늘릴 예정' }] }
+  ];
+  const REASONS = {
+    A: '고해상도 이미지·영상을 대량으로 빠르게 생성합니다.',
+    B: '복잡한 씬도 끊김 없이 렌더링합니다.',
+    C: '언어 모델 추론과 가벼운 파인튜닝에 균형 잡힌 구성입니다.',
+    D: '큰 모델을 메모리에 올려 긴 학습까지 버팁니다.'
+  };
+  const BASE = { llm: 'C', gen: 'A', '3d': 'B' };
+
+  const wrap = document.getElementById('questions');
+  wrap.innerHTML = QUESTIONS.map(q => `
+    <div class="q" data-up>
+      <div class="q-title"><span>${q.no}</span><h2>${q.title}</h2></div>
+      <div class="opts" role="radiogroup" aria-label="${q.title}">
+        ${q.opts.map(o => `<button type="button" class="opt" role="radio" data-key="${q.key}" data-v="${o.v}"><b>${o.label}</b><small>${o.desc}</small></button>`).join('')}
+      </div>
+    </div>`).join('');
+
+  const img = document.getElementById('recImg');
+  let shownId = null;
+
+  function render() {
+    wrap.querySelectorAll('.opt').forEach(b => {
+      const on = answers[b.dataset.key] === b.dataset.v;
+      b.classList.toggle('on', on);
+      b.setAttribute('aria-checked', on);
+    });
+    let recId = BASE[answers.task];
+    if (answers.task === 'llm' && (answers.scale === 'large' || answers.prio === 'expand')) recId = 'D';
+    if (answers.scale === 'large' && answers.task !== 'llm') recId = 'D';
+    const altId = recId === 'D' ? BASE[answers.task] : 'D';
+    const label = k => QUESTIONS.find(q => q.key === k).opts.find(o => o.v === answers[k]).label;
+    const rec = by(recId);
+
+    document.getElementById('recFor').textContent = `${label('task')} · ${label('scale')} · ${label('prio')}`;
+    document.getElementById('recName').textContent = rec.name;
+    document.getElementById('recReason').textContent = REASONS[recId];
+    document.getElementById('recVram').textContent = rec.vram;
+    document.getElementById('recAlt').textContent = `함께 볼 모델 · ${by(altId).name}`;
+
+    if (shownId !== recId) {
+      const first = shownId === null;
+      shownId = recId;
+      const apply = () => { img.src = rec.img; img.alt = rec.name; img.classList.remove('swap'); };
+      if (first) apply(); else {
+        img.classList.add('swap'); setTimeout(apply, 250);
+        // 추천 모델이 바뀌면 정보가 다시 올라오고 VRAM이 카운트업 (motion.js)
+        const M = window.TGMotion;
+        if (M && M.enabled) { M.swap(document.querySelectorAll('.rec-info, .rec-spec')); M.countUp(document.getElementById('recVram'), 0.1); }
+      }
+    }
+  }
+
+  wrap.addEventListener('click', e => {
+    const b = e.target.closest('.opt');
+    if (!b) return;
+    answers[b.dataset.key] = b.dataset.v;
+    render();
+  });
+  render();
+})();
+
+// Compare: 모델 사양 표
+(() => {
+  const models = window.TG_MODELS;
+  let cols = models.map(m => m.id);
+  const GROUPS = [
+    { title: '연산', rows: [['GPU 메모리 (VRAM)', 'vram', true], ['GPU', 'gpu'], ['CPU', 'cpu'], ['시스템 메모리', 'ram']] },
+    { title: '저장 · 확장', rows: [['저장장치', 'ssd'], ['확장 슬롯', 'slot'], ['전면 · 후면 포트', 'port']] },
+    { title: '본체', rows: [['냉각 방식', 'cool'], ['전원 공급', 'psu'], ['크기 · 무게', 'size'], ['보증 기간', 'warranty']] }
+  ];
+
+  const picker = document.getElementById('picker');
+  picker.insertAdjacentHTML('beforeend', models.map(m =>
+    `<button type="button" class="chip" data-id="${m.id}">${m.name}</button>`).join(''));
+
+  function render() {
+    picker.querySelectorAll('.chip').forEach(c => {
+      const on = cols.includes(c.dataset.id);
+      c.classList.toggle('on', on);
+      c.setAttribute('aria-pressed', on);
+    });
+    const shown = models.filter(m => cols.includes(m.id));
+    const head = `<div class="row models"><div class="label"></div>${shown.map(m => `
+      <div class="cell mcol"><div class="thumb media-bg"><img src="${m.img}" alt="${m.name}"></div><b>${m.name}</b><span>${m.use}</span></div>`).join('')}</div>`;
+    const body = GROUPS.map(g => `<div class="group">${g.title}</div>` + g.rows.map(([label, key, primary]) => primary
+      ? `<div class="row primary"><div class="label"><b>${label}</b><span class="hint">AI 작업의 첫 기준</span></div>${shown.map(m => `<div class="cell"><b data-count>${m[key]}</b><small>GB</small></div>`).join('')}</div>`
+      : `<div class="row"><div class="label"><b>${label}</b></div>${shown.map(m => `<div class="cell">${m[key]}</div>`).join('')}</div>`
+    ).join('')).join('');
+    document.getElementById('table').innerHTML = head + body;
+  }
+
+  picker.addEventListener('click', e => {
+    const c = e.target.closest('.chip');
+    if (!c) return;
+    const id = c.dataset.id;
+    if (cols.includes(id)) {
+      if (cols.length <= 2) return; // 최소 2개 모델은 비교
+      cols = cols.filter(x => x !== id);
+    } else {
+      cols = models.map(m => m.id).filter(x => cols.includes(x) || x === id);
+    }
+    render();
+  });
+  render();
+})();
+
+// Business: 견적 문의 폼
+(() => {
+  const box = document.getElementById('interest');
+  box.innerHTML = window.TG_MODELS.map(m =>
+    `<button type="button" class="chip" data-id="${m.id}" aria-pressed="false">${m.name}</button>`).join('');
+  box.addEventListener('click', e => {
+    const c = e.target.closest('.chip');
+    if (!c) return;
+    const on = c.classList.toggle('on');
+    c.setAttribute('aria-pressed', on);
+  });
+
+  const form = document.getElementById('quoteForm');
+  const sent = document.getElementById('sent');
+  // 실제 전송 연동 전까지는 접수 화면만 보여줍니다.
+  form.addEventListener('submit', e => {
+    e.preventDefault();
+    form.hidden = true;
+    sent.hidden = false;
+    if (window.TGMotion && TGMotion.enabled) TGMotion.swap(sent);
+  });
+  document.getElementById('reset').addEventListener('click', () => {
+    form.reset();
+    box.querySelectorAll('.chip').forEach(c => { c.classList.remove('on'); c.setAttribute('aria-pressed', 'false'); });
+    sent.hidden = true;
+    form.hidden = false;
+  });
+})();
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script>
+(() => {
+  const MODELS = [
+    { name: 'S1', line: 'RTX 5090과 128GB 메모리로 이미지·영상을 빠르게 생성', use: '이미지·영상 생성', vram: '32', img: 'assets/tg-a.png', imgSize: '126%', glb: 'assets/s1-web.glb' },
+    { name: 'R1', line: 'RTX 5090 두 장으로 무거운 3D 장면도 막힘없이 렌더링', use: '3D 렌더링', vram: '64', img: 'assets/tg-b2.png' },
+    { name: 'X1', line: '96GB GPU 한 장에 대형 언어 모델을 그대로 올려 추론', use: 'LLM 추론', vram: '96', img: 'assets/tg-c2.png' },
+    { name: 'X2', line: 'GPU 네 장과 1TB 메모리로 대형 모델 학습까지 한 대에서', use: 'LLM 학습', vram: '384', img: 'assets/tg-d2.png' }
+  ];
+  const SITEMAP = [
+    { title: '제품', items: ['라인업', '사양 비교', '추천 가이드'] },
+    { title: '서비스', items: ['업그레이드 프로그램', '전문 기술 지원'] },
+    { title: '기업', items: ['기업 구매', '대량 견적 문의'] },
+    { title: '고객 지원', items: ['브랜드', '마이페이지', '자주 묻는 질문'] }
+  ];
+
+  const LINKS = { '라인업': '#lineup', '사양 비교': '#compare', '추천 가이드': '#guide', '업그레이드 프로그램': '#service', '전문 기술 지원': '#service', '기업 구매': '#business', '대량 견적 문의': '#quote' };
+
+  // Lineup cards
+  const track = document.getElementById('track');
+  track.innerHTML = MODELS.map(m => `
+    <article class="card" tabindex="0">
+      <div class="card-media">
+        <div class="card-glow"></div>
+        <div class="card-img" role="img" aria-label="${m.name}" style="background-image:url(${m.img})${m.imgSize ? `;background-size:${m.imgSize}` : ''}"></div>
+        <button type="button" class="card-badge" data-glb="${m.glb || ''}">360° 보기</button>
+      </div>
+      <div class="card-body">
+        <div><h3>${m.name}</h3><p class="line">${m.line}</p></div>
+        <div class="card-spec">
+          <div><span class="k">GPU 메모리</span><span class="vram"><b data-count>${m.vram}</b><small>GB</small></span></div>
+          <div class="use-wrap"><span class="k">추천 용도</span><span class="use">${m.use}</span></div>
+        </div>
+      </div>
+    </article>`).join('');
+
+  const cards = [...track.children];
+  const hoverable = matchMedia('(hover:hover)');
+  cards.forEach(c => {
+    c.addEventListener('mouseenter', () => hoverable.matches && c.classList.add('on'));
+    c.addEventListener('mouseleave', () => hoverable.matches && c.classList.remove('on'));
+    c.addEventListener('focus', () => c.classList.add('on'));
+    c.addEventListener('blur', () => c.classList.remove('on'));
+    c.addEventListener('click', () => {
+      if (hoverable.matches) return;
+      const was = c.classList.contains('on');
+      cards.forEach(x => x.classList.remove('on'));
+      if (!was) c.classList.add('on');
+    });
+  });
+
+  // 360° 보기: 배지를 누르면 카드 사진 자리에 3D 모델을 띄움
+  track.querySelectorAll('.card-badge').forEach(btn => {
+    let viewer = null, notice = 0;
+    btn.addEventListener('click', async e => {
+      e.stopPropagation();
+      const card = btn.closest('.card'), media = btn.parentElement;
+      // 3D 데이터가 아직 없는 모델: 안내 문구만 잠깐 표시
+      if (!btn.dataset.glb) {
+        let hint = media.querySelector('.card-hint');
+        if (!hint) { hint = document.createElement('p'); hint.className = 'card-hint'; media.append(hint); }
+        hint.textContent = '3D 모델 준비 중이에요';
+        clearTimeout(notice);
+        notice = setTimeout(() => hint.remove(), 1800);
+        return;
+      }
+      if (viewer) {
+        viewer.destroy(); viewer = null;
+        media.querySelector('.card-3d')?.remove();
+        media.querySelector('.card-hint')?.remove();
+        card.classList.remove('is-3d');
+        btn.textContent = '360° 보기';
+        return;
+      }
+      const host = document.createElement('div');
+      host.className = 'card-3d';
+      const hint = document.createElement('p');
+      hint.className = 'card-hint';
+      hint.textContent = '불러오는 중…';
+      media.append(host, hint);
+      card.classList.add('is-3d');
+      btn.textContent = '사진 보기';
+      const { mountViewer } = await import('./viewer3d.js');
+      viewer = host.viewer = mountViewer(host, btn.dataset.glb);
+      viewer.loading.then(() => { hint.textContent = '드래그해서 돌려보세요'; })
+        .catch(() => { hint.textContent = '3D 모델을 불러오지 못했어요'; });
+    });
+  });
+
+  // Carousel arrows
+  const navBtns = document.querySelectorAll('.lineup-nav button');
+  const syncNav = () => {
+    const max = track.scrollWidth - track.clientWidth - 2;
+    navBtns[0].disabled = track.scrollLeft <= 2;
+    navBtns[1].disabled = track.scrollLeft >= max;
+  };
+  navBtns.forEach(b => b.addEventListener('click', () => track.scrollBy({ left: +b.dataset.dir * 340, behavior: 'smooth' })));
+  track.addEventListener('scroll', syncNav, { passive: true });
+  addEventListener('resize', syncNav);
+  syncNav();
+
+  // Footer sitemap
+  document.getElementById('sitemap').innerHTML = SITEMAP.map(col =>
+    `<div><span>${col.title}</span>${col.items.map(it => `<a href="${LINKS[it] || '#'}">${it}</a>`).join('')}</div>`).join('');
+
+  // Hero light-up
+  setTimeout(() => document.body.classList.add('lit'), 350);
+
+  // Reveal on scroll
+  const els = document.querySelectorAll('[data-reveal]');
+  const show = el => el.classList.add('shown');
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver(es => es.forEach(e => {
+      if (e.isIntersecting) { show(e.target); io.unobserve(e.target); }
+    }), { threshold: 0.3 });
+    els.forEach(el => io.observe(el));
+  }
+  setTimeout(() => els.forEach(show), 9000);
+
+  // Mobile menu
+  const btn = document.querySelector('.menu-btn');
+  const drawer = document.querySelector('.drawer');
+  const setMenu = open => {
+    document.body.classList.toggle('menu-open', open);
+    btn.setAttribute('aria-expanded', open);
+    drawer.setAttribute('aria-hidden', !open);
+  };
+  btn.addEventListener('click', () => setMenu(!document.body.classList.contains('menu-open')));
+  drawer.addEventListener('click', e => e.target.tagName === 'A' && setMenu(false));
+
+  // 라인업 카드: 등장 모션이 끝나면 호버 리프트 활성화
+  const markReady = () => cards.forEach(c => c.classList.add('ready'));
+  track.addEventListener('tg:revealed', markReady);
+  window.addEventListener('load', () => { if (!window.TGMotion || !TGMotion.enabled) markReady(); });
+})();
+</script>
+<script src="motion.js"></script>
+<script>
+// 그라데이션 제목: 단어 span마다 같은 그라데이션을 글자 전체 폭 기준 위치로 옮겨 이어지게 함
+(() => {
+  const fit = () => document.querySelectorAll('.grad-text').forEach(el => {
+    const words = [...el.querySelectorAll('.m-word')];
+    if (!words.length) return;
+    const left = Math.min(...words.map(w => w.offsetLeft));
+    const right = Math.max(...words.map(w => w.offsetLeft + w.offsetWidth));
+    el.style.setProperty('--gw', (right - left) + 'px');
+    el.style.setProperty('--gh', el.offsetHeight + 'px');
+    words.forEach(w => { w.style.backgroundPosition = `${left - w.offsetLeft}px ${-w.offsetTop}px`; });
+  });
+  fit();
+  window.addEventListener('load', fit);
+  window.addEventListener('resize', fit);
+  document.fonts && document.fonts.ready.then(fit);
+})();
+</script>
+<script>
+// 히어로: 라벨 칩 → 헤드라인 단어 → 버튼 (설정값은 motion.js의 MOTION)
+(() => {
+  const M = window.TGMotion;
+  if (!M || !M.enabled) return;
+  const hero = document.querySelector('.hero');
+  const words = M.split(hero.querySelector('[data-split]'));
+  const U = M.MOTION.up, from = y => M.reduce ? { opacity: 0 } : { opacity: 0, y };
+  gsap.timeline({ delay: 0.5 })
+    .fromTo(hero.querySelector('h1'), from(12), { opacity: 1, y: 0, duration: 0.8, ease: U.ease, clearProps: 'transform' })
+    .add(M.playWords(words), '-=0.45')
+    .fromTo(hero.querySelector('.hero-ctas'), from(20), { opacity: 1, y: 0, duration: U.duration, ease: U.ease, clearProps: 'transform' }, '-=0.6');
+})();
+</script>
+<script>
+// 히어로 스크롤 아웃: 카피가 위로 올라가며 윗줄부터 차례로 사라지고, 배경은 살짝 확대
+(() => {
+  const RISE = 0.45, FADE_START = 0.80, FADE_LEN = 0.12, STAGGER = 0.04, BG_SCALE = 0.04;
+  const hero = document.querySelector('.hero');
+  if (!hero || matchMedia('(prefers-reduced-motion:reduce)').matches) return;
+  const pin = hero.querySelector('.hero-pin');
+  const bg = hero.querySelector('.hero-bg');
+  const copy = hero.querySelector('.hero-copy');
+  const lines = [...copy.querySelectorAll('.line')];
+  const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+  const easeOut = t => 1 - (1 - t) * (1 - t);
+  let ticking = false;
+
+  const update = () => {
+    ticking = false;
+    // fit.js의 zoom 때문에 innerHeight 대신 sticky 컨테이너 높이(= 화면 높이)를 같은 좌표계에서 사용
+    const r = hero.getBoundingClientRect(), vh = pin.getBoundingClientRect().height;
+    const range = r.height - vh;
+    const p = range > 0 ? clamp(-r.top / range, 0, 1) : 0;
+    copy.style.transform = `translate3d(0,${-(p * p) * RISE * pin.offsetHeight}px,0)`;
+    lines.forEach((el, i) => {
+      const t = clamp((p - FADE_START - i * STAGGER) / FADE_LEN, 0, 1);
+      el.style.opacity = 1 - easeOut(t);
+    });
+    bg.style.transform = `scale(${1 + BG_SCALE * p})`;
+  };
+  const onScroll = () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } };
+  addEventListener('scroll', onScroll, { passive: true });
+  addEventListener('resize', onScroll);
+  update();
+})();
+
+// GNB: 히어로 위에서는 투명, 히어로를 지나면 배경 깔림
+(() => {
+  const gnb = document.querySelector('.gnb');
+  const hero = document.querySelector('.hero');
+  if (!gnb || !hero) return;
+  const update = () => gnb.classList.toggle('solid', hero.getBoundingClientRect().bottom <= gnb.getBoundingClientRect().height);
+  addEventListener('scroll', update, { passive: true });
+  addEventListener('resize', update);
+  update();
+})();
+
+// 화면 전환: #guide · #compare · #service · #business 는 서브 페이지, 그 밖의 # 는 메인
+(() => {
+  const TITLES = { home: 'TG · AI Powered Station', guide: '추천 가이드 · TG', compare: '사양 비교 · TG', service: '서비스 · TG', business: '기업 구매 · TG' };
+  const ANCHORS = { quote: 'business' }; // 서브 페이지 안의 위치 링크
+  const views = document.querySelectorAll('[data-view]');
+  const navLinks = document.querySelectorAll('.gnb nav a');
+  let current = null;
+  const route = () => {
+    const hash = location.hash.slice(1);
+    const name = hash !== 'home' && TITLES[hash] ? hash : ANCHORS[hash] || 'home';
+    const changed = name !== current;
+    if (changed) {
+      current = name;
+      views.forEach(v => { v.hidden = v.dataset.view !== name; });
+      navLinks.forEach(a => a.classList.toggle('on', a.getAttribute('href') === '#' + name));
+      document.title = TITLES[name];
+      // 숨어 있던 화면의 크기를 다시 계산 (fit · 그라데이션 제목 · 히어로 · GNB 배경 · 라인업 화살표)
+      dispatchEvent(new Event('resize'));
+    }
+    const target = hash !== name && document.getElementById(hash);
+    if (target) target.scrollIntoView({ behavior: changed ? 'instant' : 'smooth' });
+    else if (changed) scrollTo({ top: 0, behavior: 'instant' });
+  };
+  addEventListener('hashchange', route);
+  route();
+})();
+</script>
+</body>
+</html>
